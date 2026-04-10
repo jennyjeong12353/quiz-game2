@@ -1,0 +1,309 @@
+<!DCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>후와후와 일어 퀴즈</title>
+    <style>
+        :root {
+            --primary-color: #AEC6CF; /* 파스텔 블루 */
+            --success-color: #B2E2B2; /* 파스텔 그린 */
+            --error-color: #FFB3BA;   /* 파스텔 레드 */
+            --bg-color: #FFF9F0;      /* 부드러운 아이보리 */
+            --card-bg: #ffffff;
+            --text-color: #5D5D5D;
+            --accent-color: #FFDAC1;  /* 파스텔 오렌지 */
+        }
+
+        body { 
+            font-family: 'Pretendard', -apple-system, sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            color: var(--text-color);
+        }
+
+        .container { 
+            width: 92%; 
+            max-width: 450px; 
+            background: var(--card-bg); 
+            padding: 2.5rem 1.5rem; 
+            border-radius: 30px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05); 
+            text-align: center; 
+        }
+
+        .hidden { display: none !important; }
+
+        h1 { color: #88B0BC; margin-bottom: 1rem; font-size: 1.8rem; }
+
+        /* Stats */
+        .stats { display: flex; justify-content: space-between; margin-bottom: 1.5rem; font-weight: bold; color: #aaa; }
+        
+        /* Quiz */
+        .question-box { 
+            font-size: 2.2rem; 
+            margin-bottom: 2rem; 
+            min-height: 80px; 
+            font-weight: 700; 
+            color: #6A8D92;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .options-grid { display: grid; gap: 12px; }
+        .option-btn { 
+            padding: 18px; 
+            border: none; 
+            border-radius: 18px; 
+            background: #F0F4F7; 
+            cursor: pointer; 
+            font-size: 1.1rem; 
+            transition: all 0.2s ease;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+        .option-btn:hover { background: var(--accent-color); transform: translateY(-2px); }
+        .option-btn.correct { background-color: var(--success-color) !important; color: white; }
+        .option-btn.wrong { background-color: var(--error-color) !important; color: white; }
+
+        /* Review (오답노트) */
+        .review-box { 
+            text-align: left; 
+            background: #FDFBF7; 
+            padding: 15px; 
+            border-radius: 15px; 
+            margin: 20px 0; 
+            max-height: 200px; 
+            overflow-y: auto;
+            border: 1px dashed #DDD;
+        }
+        .review-item { margin-bottom: 8px; font-size: 0.9rem; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+        .review-item span { color: var(--error-color); font-weight: bold; }
+
+        /* Inputs & Buttons */
+        input { 
+            width: 80%; padding: 15px; margin: 15px 0; border: 2px solid #F0F0F0; 
+            border-radius: 15px; font-size: 1rem; outline: none; transition: 0.3s;
+        }
+        input:focus { border-color: var(--primary-color); }
+        
+        .main-btn { 
+            background: var(--primary-color); color: white; border: none; 
+            padding: 15px 40px; border-radius: 15px; cursor: pointer; 
+            font-size: 1.1rem; font-weight: bold; transition: 0.3s;
+        }
+        .main-btn:hover { opacity: 0.8; transform: scale(1.02); }
+        .main-btn:disabled { background: #ccc; }
+
+        /* Ranking */
+        .ranking-list { text-align: left; margin: 20px 0; padding: 0; list-style: none; }
+        .ranking-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #F9F9F9; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 시작 화면 -->
+        <div id="start-screen">
+            <h1>🌸 일본어 퀴즈</h1>
+            <p>기초 일본어 10문제를 맞춰보세요!</p>
+            <br>
+            <button class="main-btn" id="btn-start">게임 시작하기</button>
+        </div>
+
+        <!-- 퀴즈 화면 -->
+        <div id="quiz-screen" class="hidden">
+            <div class="stats">
+                <span id="progress">1/10</span>
+                <span id="score-display">점수: 0</span>
+            </div>
+            <div class="question-box" id="question">...</div>
+            <div class="options-grid" id="options"></div>
+        </div>
+
+        <!-- 결과 및 오답노트 화면 -->
+        <div id="result-screen" class="hidden">
+            <h2>참 잘했어요! ✨</h2>
+            <p id="final-score" style="font-size: 1.5rem; font-weight: bold; color: #88B0BC;"></p>
+            
+            <div id="wrong-note-area" class="hidden">
+                <p style="text-align:left; font-weight:bold; margin-bottom:5px;">📝 오답노트</p>
+                <div class="review-box" id="wrong-list"></div>
+            </div>
+
+            <input type="text" id="nickname" placeholder="닉네임을 입력하세요" maxlength="10">
+            <button class="main-btn" id="btn-save">랭킹에 기록하기</button>
+        </div>
+
+        <!-- 랭킹 화면 -->
+        <div id="ranking-screen" class="hidden">
+            <h2>🏆 명예의 전당</h2>
+            <ul class="ranking-list" id="ranking-list"></ul>
+            <button class="main-btn" onclick="location.reload()">다시 도전하기</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Firebase 설정 (전달해주신 키 적용)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBgc87EwYMvYU0g1UHnM33E9X6PnWwI-Bs",
+            authDomain: "my-quiz-game-8c884.firebaseapp.com",
+            projectId: "my-quiz-game-8c884",
+            storageBucket: "my-quiz-game-8c884.firebasestorage.app",
+            messagingSenderId: "748069278338",
+            appId: "1:748069278338:web:410bee8185c8311013da9b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 일본어 퀴즈 데이터 (단어 - 보기 - 정답인덱스)
+        const quizData = [
+            { q: "こんにちは", a: ["안녕/낮 인사", "잘 자", "미안해", "처음 뵙겠습니다"], c: 0 },
+            { q: "ありがとう", a: ["축하해", "고마워", "괜찮아", "잘 가"], c: 1 },
+            { q: "ねこ", a: ["강아지", "토끼", "고양이", "원숭이"], c: 2 },
+            { q: "いぬ", a: ["개(강아지)", "새", "물고기", "햄스터"], c: 0 },
+            { q: "さくら", a: ["장미", "해바라기", "튤립", "벚꽃"], c: 3 },
+            { q: "たべる", a: ["마시다", "먹다", "가다", "보다"], c: 1 },
+            { q: "のむ", a: ["마시다", "웃다", "걷다", "사다"], c: 0 },
+            { q: "あつい", a: ["춥다", "멀다", "덥다", "작다"], c: 2 },
+            { q: "せんせい", a: ["학생", "의사", "선생님", "경찰"], c: 2 },
+            { q: "ともだち", a: ["부모님", "친구", "동생", "이웃"], c: 1 }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let isChecking = false;
+        let wrongAnswers = []; // 오답 저장용 배열
+
+        // 시작 버튼
+        document.getElementById('btn-start').addEventListener('click', () => {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            showQuestion();
+        });
+
+        function showQuestion() {
+            isChecking = false;
+            const q = quizData[currentIdx];
+            document.getElementById('progress').innerText = `${currentIdx + 1}/${quizData.length}`;
+            document.getElementById('question').innerText = q.q;
+            
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            
+            q.a.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(i, btn);
+                optionsDiv.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedIdx, btn) {
+            if (isChecking) return;
+            isChecking = true;
+
+            const correctIdx = quizData[currentIdx].c;
+            const buttons = document.querySelectorAll('.option-btn');
+
+            if (selectedIdx === correctIdx) {
+                btn.classList.add('correct');
+                score += 10;
+                document.getElementById('score-display').innerText = `점수: ${score}`;
+            } else {
+                btn.classList.add('wrong');
+                buttons[correctIdx].classList.add('correct');
+                // 오답 기록
+                wrongAnswers.push({
+                    word: quizData[currentIdx].q,
+                    correct: quizData[currentIdx].a[correctIdx],
+                    mine: quizData[currentIdx].a[selectedIdx]
+                });
+            }
+
+            setTimeout(() => {
+                currentIdx++;
+                if (currentIdx < quizData.length) {
+                    showQuestion();
+                } else {
+                    showResult();
+                }
+            }, 1000);
+        }
+
+        function showResult() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = `최종 점수: ${score}점`;
+
+            // 오답노트 출력
+            if (wrongAnswers.length > 0) {
+                document.getElementById('wrong-note-area').classList.remove('hidden');
+                const listDiv = document.getElementById('wrong-list');
+                listDiv.innerHTML = wrongAnswers.map(item => `
+                    <div class="review-item">
+                        <strong>${item.word}</strong>: 정답 [${item.correct}] <span>(나의 선택: ${item.mine})</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // 점수 저장
+        document.getElementById('btn-save').addEventListener('click', async () => {
+            const nickname = document.getElementById('nickname').value.trim();
+            if (!nickname) return alert("닉네임을 입력해주세요!");
+
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true;
+            btn.innerText = "저장 중...";
+
+            try {
+                await addDoc(collection(db, "scores"), {
+                    nickname, score, timestamp: serverTimestamp()
+                });
+                showRanking();
+            } catch (e) {
+                console.error(e);
+                alert("저장 실패!");
+                btn.disabled = false;
+            }
+        });
+
+        async function showRanking() {
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('ranking-screen').classList.remove('hidden');
+            const rankingList = document.getElementById('ranking-list');
+            rankingList.innerHTML = "<li>불러오는 중...</li>";
+
+            try {
+                const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(5));
+                const snap = await getDocs(q);
+                rankingList.innerHTML = "";
+                let rank = 1;
+                snap.forEach((doc) => {
+                    const d = doc.data();
+                    rankingList.innerHTML += `
+                        <li class="ranking-item">
+                            <span>${rank}. ${d.nickname}</span>
+                            <span>${d.score}점</span>
+                        </li>`;
+                    rank++;
+                });
+            } catch (e) {
+                rankingList.innerHTML = "<li>랭킹을 불러올 수 없습니다.</li>";
+            }
+        }
+    </script>
+</body>
+</html>
